@@ -9,41 +9,60 @@ use App\Http\Controllers\API\DaerahController;
 use App\Http\Controllers\API\SuaraController;
 use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\DashboardController;
-use App\Http\Controllers\Api\InfoPublikController;
+use App\Http\Controllers\API\InfoPublikController;
+use App\Http\Controllers\API\KorwilController;
 
 
 // Login & Register
 Route::post('/register', [AuthenticationController::class, 'register']);
 Route::post('/login', [AuthenticationController::class, 'login']);
+Route::get('/kecamatan', [DaerahController::class, 'getKecamatan']);
+Route::get('/get-desa/{id_kecamatan}', [DaerahController::class, 'getDesa']);
+Route::get('/wilayah/desa-rtrw/{id_kecamatan}', [DaerahController::class, 'getDesaRTRW']);
+
+
 
 // Protected Routes (require token)
 Route::middleware('auth:sanctum')->group(function () {
     // Route::get('/profil', function (Request $request) {
     //     return response()->json($request->user());
     // });
+    Route::get('/get-wilayah-rtrw', [DaerahController::class, 'getWilayahAdmin']);
+    Route::get('/profildesa/{id_desa}', [DaerahController::class, 'profilDesa']);
+    Route::put('/profildesa/{id_desa}', [DaerahController::class, 'updateProfilDesa']);
+    Route::get('/profilkecamatan/{id_kecamatan}', [DaerahController::class, 'profilKecamatan']);
 
+    
     Route::post('/logout', [AuthenticationController::class, 'logOut']);
     Route::get('/users', [AuthenticationController::class, 'userInfo']);
     Route::get('/profilanggota', [AuthenticationController::class, 'profil']);
 
+    Route::get('/arahan', [InfoPublikController::class, 'arahanIndex']);
     Route::get('/arahan-ketua', [InfoPublikController::class, 'arahanKetua']);
     Route::post('/arahan/store', [InfoPublikController::class, 'arahanStore']);
     Route::get('/kabar-terbaru', [InfoPublikController::class, 'kabarTerbaru']);
     Route::post('/kabar/store', [InfoPublikController::class, 'kabarStore']);
+    Route::post('/upload-gambar', [InfoPublikController::class, 'uploadGambar']);
 
     Route::get('/profil', [ProfilController::class, 'profil']);
     Route::put('/profil/update', [ProfilController::class, 'updateProfil']);
+    
 
     Route::post('/anggota', [AnggotaController::class, 'store']);
     Route::put('/anggota/{id}', [AnggotaController::class, 'update']);
+    Route::get('/anggota/statistik', [AnggotaController::class, 'statistik']);
+    Route::get('/anggota/statistik/filter', [AnggotaController::class, 'statistikFiltered']);
 
     Route::post('/struktur', [StrukturController::class, 'store']);
     Route::get('/struktur/kecamatan/{id}', [StrukturController::class, 'byKecamatan']);
     Route::get('/struktur/desa/{id}', [StrukturController::class, 'byDesa']);
-
-
-    Route::get('/kecamatan', [DaerahController::class, 'getKecamatan']);
-    Route::get('/get-desa/{id_kecamatan}', [DaerahController::class, 'getDesa']);
+    Route::get('/struktur/pac', [StrukturController::class, 'indexDpac']);
+    Route::get('/struktur/dprt', [StrukturController::class, 'indexDprt']);
+    
+    Route::get('/korwil', [KorwilController::class, 'index']);
+    Route::post('/korwil', [KorwilController::class, 'store']);
+    Route::put('/korwil/{id}', [KorwilController::class, 'update']);
+    Route::get('/korw/{id}', [KorwilController::class, 'getByDesa']);
 
     Route::get('/suara', [SuaraController::class, 'index']);
     Route::post('/suara', [SuaraController::class, 'store']);
