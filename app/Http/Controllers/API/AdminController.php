@@ -8,74 +8,110 @@ use App\Models\User;
 use App\Models\Struktur;
 use App\Models\Anggota;
 use App\Models\Suara;
+use App\Traits\ApiResponder;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
+    use ApiResponder;
+
     public function index()
     {
-        $authUser = auth()->user();
+        try {
+            $authUser = auth()->user();
+            $query = User::query();
 
-        $query = User::query();
+            if ($authUser->role === 'admin_pac') {
+                $query->where('id_kecamatan', $authUser->id_kecamatan);
+            } elseif ($authUser->role === 'admin_desa') {
+                $query->where('id_desa', $authUser->id_desa);
+            }
 
-        if ($authUser->role === 'admin_pac') {
-            $query->where('id_kecamatan', $authUser->id_kecamatan);
-        } elseif ($authUser->role === 'admin_desa') {
-            $query->where('id_desa', $authUser->id_desa);
+            return $this->success($query->get(), 'Data pengguna berhasil diambil.');
+
+        } catch (\Exception $e) {
+            Log::error('Admin Get Users Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat mengambil data pengguna.', 500);
         }
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $query->get(),
-        ]);
     }
 
     public function updateStruktur(Request $request)
     {
-        $request->validate([
-            'struktur' => 'required|array',
-            'struktur.*.nik' => 'required|digits:16|exists:anggota,nik',
-            'struktur.*.jabatan' => 'required|string',
-        ]);
+        try {
+            // Validasi dimasukkan ke dalam blok try
+            $validator = Validator::make($request->all(), [
+                'struktur' => 'required|array',
+                'struktur.*.nik' => 'required|digits:16|exists:anggota,nik',
+                'struktur.*.jabatan' => 'required|string',
+            ]);
 
-        foreach ($request->struktur as $data) {
-            $anggota = Anggota::where('nik', $data['nik'])->first();
-
-            if ($anggota) {
-                Struktur::updateOrCreate(
-                    ['id_anggota' => $anggota->id],
-                    [
-                        'jabatan' => $data['jabatan'],
-                        'id_desa' => $anggota->id_desa,
-                        'id_kecamatan' => $anggota->id_kecamatan,
-                    ]
-                );
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
             }
+
+            foreach ($request->struktur as $data) {
+                $anggota = Anggota::where('nik', $data['nik'])->first();
+                if ($anggota) {
+                    Struktur::updateOrCreate(
+                        ['id_anggota' => $anggota->id],
+                        [
+                            'jabatan' => $data['jabatan'],
+                            'id_desa' => $anggota->id_desa,
+                            'id_kecamatan' => $anggota->id_kecamatan,
+                        ]
+                    );
+                }
+            }
+            
+            // Mengembalikan pesan sukses tanpa data
+            return $this->success(null, 'Struktur berhasil diperbarui.');
+
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Update Struktur Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat memperbarui struktur.', 500);
         }
-
-        return response()->json(['status' => 'success', 'message' => 'Struktur diperbarui']);
     }
-    public function inputSuara(Request $request)
+    
+    public function storeSuara(Request $request)
     {
-        $request->validate([
-            'id_anggota' => 'required|exists:anggota,id',
-            'jumlah_suara' => 'required|integer|min:0',
-        ]);
+        try {
+            // Menggunakan validasi yang sama dengan SuaraController untuk konsistensi
+            $validator = Validator::make($request->all(), [
+                'tahun' => 'required|integer|digits:4',
+                'id_kecamatan' => 'required|exists:daerah,id',
+                'id_desa' => [
+                    'required',
+                    'exists:daerah,id',
+                    Rule::unique('suara')->where(function ($query) use ($request) {
+                        return $query->where('tahun', $request->tahun)
+                                     ->where('id_kecamatan', $request->id_kecamatan);
+                    }),
+                ],
+                'dprd' => 'required|integer|min:0',
+                'dpr_prov' => 'required|integer|min:0',
+                'dpr_ri' => 'required|integer|min:0',
+            ], [
+                'id_desa.unique' => 'Data suara untuk wilayah dan tahun ini sudah ada.'
+            ]);
 
-        $user = auth()->user();
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
+            }
 
-        $suara = Suara::create([
-            'id_anggota' => $request->id_anggota,
-            'jumlah_suara' => $request->jumlah_suara,
-            'id_desa' => $user->id_desa,
-            'id_kecamatan' => $user->id_kecamatan,
-        ]);
+            $suara = Suara::create($validator->validated());
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Data suara berhasil disimpan',
-            'data' => $suara,
-        ]);
+            return $this->success($suara, 'Data suara berhasil disimpan.', 201);
+
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Admin Store Suara Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat menyimpan data suara.', 500);
+        }
     }
-
-
 }

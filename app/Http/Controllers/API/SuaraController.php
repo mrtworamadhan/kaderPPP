@@ -5,121 +5,112 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Suara;
+use App\Traits\ApiResponder;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SuaraController extends Controller
 {
-    // ✅ Fungsi Index: ambil semua data suara (filter opsional)
+    use ApiResponder;
+
     public function index(Request $request)
     {
-        $query = Suara::with(['kecamatan', 'desa']);
+        try {
+            $query = Suara::with(['kecamatan', 'desa']);
 
-        if ($request->has('id_kecamatan')) {
-            $query->where('id_kecamatan', $request->id_kecamatan);
+            if ($request->has('id_kecamatan')) {
+                $query->where('id_kecamatan', $request->id_kecamatan);
+            }
+
+            if ($request->has('id_desa')) {
+                $query->where('id_desa', $request->id_desa);
+            }
+
+            if ($request->has('tahun')) {
+                $query->where('tahun', $request->tahun);
+            }
+
+            $data = $query->orderBy('tahun', 'desc')->get();
+
+            return $this->success($data, 'Data suara berhasil diambil.');
+
+        } catch (\Exception $e) {
+            Log::error('Get Suara Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat mengambil data suara.', 500);
         }
-
-        if ($request->has('id_desa')) {
-            $query->where('id_desa', $request->id_desa);
-        }
-
-        if ($request->has('tahun')) {
-            $query->where('tahun', $request->tahun);
-        }
-
-        $data = $query->orderBy('tahun', 'desc')->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-        ]);
     }
 
-    // ✅ Fungsi Store: simpan data suara (hindari duplikat)
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'tahun' => 'required|integer',
-            'id_kecamatan' => 'required|exists:daerah,id',
-            'id_desa' => 'required|exists:daerah,id',
-            'jumlah_suara' => 'required|integer',
-            'tps' => 'nullable|string',
-            'sumber' => 'nullable|string',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'tahun' => 'required|integer|digits:4',
+                'id_kecamatan' => 'required|exists:daerah,id',
+                'id_desa' => [
+                    'required',
+                    'exists:daerah,id',
+                    Rule::unique('suara')->where(function ($query) use ($request) {
+                        return $query->where('tahun', $request->tahun)
+                                     ->where('id_kecamatan', $request->id_kecamatan);
+                    }),
+                ],
+                'dprd' => 'required|integer|min:0',
+                'dpr_prov' => 'required|integer|min:0',
+                'dpr_ri' => 'required|integer|min:0',
+                'tps' => 'nullable|string|max:255',
+                'sumber' => 'nullable|string|max:255',
+            ], [
+                'id_desa.unique' => 'Data suara untuk wilayah dan tahun ini sudah ada.'
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
+            }
+
+            $suara = Suara::create($validator->validated());
+
+            return $this->success($suara, 'Data suara berhasil disimpan', 201);
+
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Store Suara Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat menyimpan data suara.', 500);
         }
-
-        // Cek apakah sudah ada data untuk wilayah dan tahun yang sama
-        $exists = Suara::where('tahun', $request->tahun)
-            ->where('id_kecamatan', $request->id_kecamatan)
-            ->where('id_desa', $request->id_desa)
-            ->first();
-
-        if ($exists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data suara untuk wilayah dan tahun ini sudah ada.'
-            ], 409);
-        }
-
-        // Simpan data
-        $suara = Suara::create([
-            'tahun' => $request->tahun,
-            'id_kecamatan' => $request->id_kecamatan,
-            'id_desa' => $request->id_desa,
-            'jumlah_suara' => $request->jumlah_suara,
-            'tps' => $request->tps,
-            'sumber' => $request->sumber ?? 'Manual',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data suara berhasil disimpan',
-            'data' => $suara
-        ]);
     }
 
-    // ✅ Fungsi Update: update data suara berdasarkan ID
     public function update(Request $request, $id)
     {
-        $suara = Suara::find($id);
+        try {
+            $suara = Suara::find($id);
 
-        if (!$suara) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan',
-            ], 404);
+            if (!$suara) {
+                return $this->error('Data suara tidak ditemukan.', 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'dprd' => 'sometimes|required|integer|min:0',
+                'dpr_prov' => 'sometimes|required|integer|min:0',
+                'dpr_ri' => 'sometimes|required|integer|min:0',
+                'tps' => 'nullable|string|max:255',
+                'sumber' => 'nullable|string|max:255',
+            ]);
+
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
+            }
+
+            $suara->update($validator->validated());
+
+            return $this->success($suara, 'Data suara berhasil diperbarui.');
+
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Update Suara Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat memperbarui data suara.', 500);
         }
-
-        $validator = Validator::make($request->all(), [
-            'jumlah_suara' => 'required|integer',
-            'tps' => 'nullable|string',
-            'sumber' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $suara->update([
-            'jumlah_suara' => $request->jumlah_suara,
-            'tps' => $request->tps,
-            'sumber' => $request->sumber ?? $suara->sumber,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data suara berhasil diperbarui',
-            'data' => $suara
-        ]);
     }
 }

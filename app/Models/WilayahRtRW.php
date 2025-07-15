@@ -4,20 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Suara extends Model
+class WilayahRtRw extends Model
 {
-    protected $table = 'Suara';
+    protected $table = 'wilayah_rtrw';
+
     protected $fillable = [
-        'tahun',
-        'desa',
-        'id_desa',
-        'kecamatan',
         'id_kecamatan',
-        'dprd',
-        'dpr_prov',
-        'dpr_ri',
-        'tps',
-        'sumber'
+        'kecamatan',
+        'id_desa',
+        'desa',
+        'jumlah_rw',
+        'jumlah_rt',
+        'jumlah_tps',
+        'jumlah_dpt',
     ];
 
     public function kecamatan()

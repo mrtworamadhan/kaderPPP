@@ -5,133 +5,101 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Anggota;
-use Illuminate\Support\Facades\Validator;
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
+use App\Traits\ApiResponder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class AnggotaController extends Controller
 {
-    
-    
+    use ApiResponder; // <-- Trait sudah digunakan
+
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nik' => 'required|unique:anggota,nik',
-            'nama' => 'required',
-            'phone' => 'nullable',
-            'alamat' => 'nullable',
-            'tgl_lahir' => 'nullable|date',
-            'gender' => 'nullable',
-            'pekerjaan' => 'nullable',
-            'desa' => 'nullable',
-            'id_desa' => 'nullable',
-            'kecamatan' => 'nullable',
-            'id_kecamatan' => 'nullable',
-            'jabatan' => 'nullable',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'nik' => 'required|string|unique:anggota,nik',
+                'nama' => 'required|string',
+                'phone' => 'nullable|string',
+                'alamat' => 'nullable|string',
+                'tgl_lahir' => 'nullable|date',
+                'gender' => 'nullable|string',
+                'pekerjaan' => 'nullable|string',
+                'desa' => 'nullable|string',
+                'id_desa' => 'nullable|integer',
+                'id_kecamatan' => 'nullable|integer',
+                'jabatan' => 'nullable|string',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
+            }
 
-        $data = $request->all();
+            $validatedData = $validator->validated();
 
+            // Auto generate no_kta
+            $lastId = Anggota::max('id') ?? 0;
+            $validatedData['id_anggota'] = '909013201' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
 
-        // Auto generate no_kta
-        $lastId = Anggota::max('id') ?? 0;
-        $no_kta = '909013201' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
+            $anggota = Anggota::create($validatedData);
 
-        $anggota = Anggota::create([
-            'nik' => $data['nik'],
-            'id_anggota' => $no_kta,
-            'nama' => $data['nama'],
-            'phone' => $data['phone'] ?? '',
-            'alamat' => $data['alamat'] ?? '',
-            'tgl_lahir' => $data['tgl_lahir'] ?? null,
-            'gender' => $data['gender'] ?? '',
-            'pekerjaan' => $data['pekerjaan'] ?? '',
-            'desa' => $data['desa'] ?? '',
-            'id_desa' => $data['id_desa'] ?? '',
-            'kecamatan' => $data['kecamatan'] ?? '',
-            'id_kecamatan' => $data['id_kecamatan'] ?? '',
-            'jabatan' => $data['jabatan'] ?? '',
-        ]);
-
-        User::create([
-                'nik' => $data['nik'],
-                'password' => Hash::make('demokratjuara'),
+            // Buat user login baru untuk anggota
+            User::create([
+                'nik' => $validatedData['nik'],
+                'password' => Hash::make(config('ekader.default_password')),
                 'role' => 'anggota',
             ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil disimpan',
-            'data' => $anggota,
-        ]);
+            return $this->success($anggota, 'Data anggota berhasil disimpan.', 201);
+
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Store Anggota Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat menyimpan data anggota.', 500);
+        }
     }
 
     public function update(Request $request, $id)
     {
-        $anggota = Anggota::find($id);
+        try {
+            $anggota = Anggota::find($id);
 
-        if (!$anggota) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data anggota tidak ditemukan',
-            ], 404);
+            if (!$anggota) {
+                return $this->error('Data anggota tidak ditemukan.', 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'nik' => ['required', 'string', Rule::unique('anggota')->ignore($anggota->id)],
+                'nama' => 'required|string',
+                'phone' => 'nullable|string',
+                'alamat' => 'nullable|string',
+                'tgl_lahir' => 'nullable|date',
+                'gender' => 'nullable|string',
+                'pekerjaan' => 'nullable|string',
+                'desa' => 'nullable|string',
+                'id_desa' => 'nullable|integer',
+                'id_kecamatan' => 'nullable|integer',
+                'jabatan' => 'nullable|string',
+            ]);
+
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
+            }
+            
+            // Praktik yang lebih aman: hanya update data yang sudah divalidasi
+            $anggota->update($validator->validated());
+
+            return $this->success($anggota, 'Data anggota berhasil diperbarui.');
+
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Update Anggota Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat memperbarui data anggota.', 500);
         }
-
-        $validator = Validator::make($request->all(), [
-            'nik' => 'required|unique:anggota,nik',
-            'nama' => 'required',
-            'phone' => 'nullable',
-            'alamat' => 'nullable',
-            'tgl_lahir' => 'nullable|date',
-            'gender' => 'nullable',
-            'pekerjaan' => 'nullable',
-            'desa' => 'nullable',
-            'id_desa' => 'nullable',
-            'kecamatan' => 'nullable',
-            'id_kecamatan' => 'nullable',
-            'jabatan' => 'nullable',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $data = $request->all();
-
-        $anggota->update([
-            'nik' => $data['nik'],
-            'nama' => $data['nama'],
-            'phone' => $data['phone'] ?? '',
-            'alamat' => $data['alamat'] ?? '',
-            'tgl_lahir' => $data['tgl_lahir'] ?? null,
-            'gender' => $data['gender'] ?? '',
-            'pekerjaan' => $data['pekerjaan'] ?? '',
-            'desa' => $data['desa'] ?? '',
-            'id_desa' => $data['id_desa'] ?? '',
-            'kecamatan' => $data['kecamatan'] ?? '',
-            'id_kecamatan' => $data['id_kecamatan'] ?? '',
-            'jabatan' => $data['jabatan'] ?? '',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data anggota berhasil diperbarui',
-            'data' => $anggota,
-        ]);
     }
-
 }
-

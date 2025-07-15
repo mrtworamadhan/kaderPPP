@@ -5,85 +5,86 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Anggota;
+use App\Traits\ApiResponder;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class ProfilController extends Controller
 {
+    use ApiResponder;
+
     public function profil(Request $request)
     {
         try {
-            $user = $request->user()->load('anggota');
+            $user = auth()->user()->load('anggota');
 
-            return response()->json([
-                'response_code' => 200,
-                'status'        => 'success',
-                'message'       => 'Data profil berhasil diambil',
-                'data_user'     => [
-                    'id'     => $user->id,
-                    'nik'    => $user->nik,
-                    'role'   => $user->role,
-                    'profil' => $user->anggota, // Data lengkap dari tabel anggota
-                ],
-            ]);
+            $profilData = $user->anggota->toArray();
+            // Menambahkan URL foto yang lengkap dan benar
+            $profilData['foto_url'] = $user->anggota->foto ? Storage::disk('public')->url($user->anggota->foto) : null;
+
+            $data = [
+                'id'     => $user->id,
+                'nik'    => $user->nik,
+                'role'   => $user->role,
+                'profil' => $profilData,
+            ];
+
+            return $this->success($data, 'Data profil berhasil diambil.');
+
         } catch (\Exception $e) {
             Log::error('Profil Error: ' . $e->getMessage());
-
-            return response()->json([
-                'response_code' => 500,
-                'status'        => 'error',
-                'message'       => 'Terjadi kesalahan saat mengambil profil',
-            ], 500);
+            return $this->error('Terjadi kesalahan saat mengambil profil.', 500);
         }
     }
 
     public function updateProfil(Request $request)
     {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
+            $anggota = Anggota::where('nik', $user->nik)->first();
 
-        // Ambil data anggota berdasarkan NIK user
-        $anggota = Anggota::where('nik', $user->nik)->first();
+            if (!$anggota) {
+                return $this->error('Data anggota tidak ditemukan.', 404);
+            }
 
-        if (!$anggota) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data anggota tidak ditemukan',
-            ], 404);
+            $validator = Validator::make($request->all(), [
+                'nama'      => 'sometimes|required|string',
+                'phone'     => 'nullable|string',
+                'alamat'    => 'nullable|string',
+                'tgl_lahir' => 'nullable|date',
+                'gender'    => 'nullable|string',
+                'pekerjaan' => 'nullable|string',
+                'foto'      => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Validasi untuk file foto
+            ]);
+
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
+            }
+
+            $validatedData = $validator->validated();
+
+            // Logika untuk menangani upload foto
+            if ($request->hasFile('foto')) {
+                // Hapus foto lama jika ada
+                if ($anggota->foto) {
+                    Storage::disk('public')->delete($anggota->foto);
+                }
+                // Simpan foto baru dan dapatkan path-nya
+                $path = $request->file('foto')->store('profil_kader', 'public');
+                $validatedData['foto'] = $path;
+            }
+            
+            $anggota->update($validatedData);
+
+            return $this->success($anggota, 'Profil berhasil diperbarui.');
+
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Update Profil Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat memperbarui profil.', 500);
         }
-
-        $validator = Validator::make($request->all(), [
-            'nama' => 'required',
-            'phone' => 'nullable',
-            'alamat' => 'nullable',
-            'tgl_lahir' => 'nullable|date',
-            'gender' => 'nullable',
-            'pekerjaan' => 'nullable',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $data = $request->all();
-
-        $anggota->update([
-            'nama' => $data['nama'],
-            'phone' => $data['phone'] ?? '',
-            'alamat' => $data['alamat'] ?? '',
-            'tgl_lahir' => $data['tgl_lahir'] ?? null,
-            'gender' => $data['gender'] ?? '',
-            'pekerjaan' => $data['pekerjaan'] ?? '',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Profil berhasil diperbarui',
-            'data' => $anggota,
-        ]);
     }
-
 }

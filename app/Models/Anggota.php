@@ -21,6 +21,7 @@ class Anggota extends Model
         'kecamatan',
         'id_kecamatan',
         'jabatan',
+        'foto',
     ];
 
 }
