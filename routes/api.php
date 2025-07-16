@@ -11,7 +11,7 @@ use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\DashboardController;
 use App\Http\Controllers\API\InfoPublikController;
 use App\Http\Controllers\API\KorwilController;
-
+use App\Http\Controllers\API\DashboardSuaraController;
 
 // Login & Register
 Route::post('/register', [AuthenticationController::class, 'register']);
@@ -19,6 +19,10 @@ Route::post('/login', [AuthenticationController::class, 'login']);
 Route::get('/kecamatan', [DaerahController::class, 'getKecamatan']);
 Route::get('/get-desa/{id_kecamatan}', [DaerahController::class, 'getDesa']);
 Route::get('/wilayah/desa-rtrw/{id_kecamatan}', [DaerahController::class, 'getDesaRTRW']);
+
+Route::get('/dashboard/suara/perbandingan', [DashboardSuaraController::class, 'perbandingan']);
+Route::get('/dashboard/suara/detail', [DashboardSuaraController::class, 'detail']);
+
 
 
 
