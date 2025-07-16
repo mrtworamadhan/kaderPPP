@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Daerah;
-use App\Models\WilayahRTRW;
+use App\Models\WilayahRtRW;
 use App\Traits\ApiResponder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -45,7 +45,7 @@ class DaerahController extends Controller
                 return $this->error('Kecamatan tidak ditemukan.', 404);
             }
 
-            $data = WilayahRTRW::where('id_kecamatan', $id_kecamatan)
+            $data = WilayahRtRW::where('id_kecamatan', $id_kecamatan)
                 ->select('id_desa', 'desa', 'jumlah_rw', 'jumlah_rt', 'jumlah_tps', 'jumlah_dpt')
                 ->get();
 
@@ -77,7 +77,7 @@ class DaerahController extends Controller
     public function profilDesa($id_desa)
     {
         try {
-            $data = WilayahRTRW::where('id_desa', $id_desa)
+            $data = WilayahRtRW::where('id_desa', $id_desa)
                 ->select('id_kecamatan', 'kecamatan', 'id_desa', 'desa', 'jumlah_rw', 'jumlah_rt', 'jumlah_tps', 'jumlah_dpt')
                 ->first();
 
@@ -99,7 +99,7 @@ class DaerahController extends Controller
             $response = null;
 
             if ($user->role === 'admin_desa') {
-                $data = WilayahRTRW::where('id_desa', $user->id_desa)->first();
+                $data = WilayahRtRW::where('id_desa', $user->id_desa)->first();
                 if (!$data) return $this->error('Data wilayah untuk desa ini tidak ditemukan.', 404);
                 
                 $response = [
@@ -109,7 +109,7 @@ class DaerahController extends Controller
                 ];
 
             } elseif ($user->role === 'admin_pac') {
-                $data = WilayahRTRW::where('id_kecamatan', $user->id_kecamatan)->get();
+                $data = WilayahRtRW::where('id_kecamatan', $user->id_kecamatan)->get();
                 $kecamatan = Daerah::find($user->id_kecamatan);
                 
                 $response = [
@@ -119,7 +119,7 @@ class DaerahController extends Controller
                 ];
                 
             } elseif ($user->role === 'admin_pusat') {
-                $data = WilayahRTRW::with('kecamatan')->selectRaw('id_kecamatan, SUM(jumlah_rw) as jumlah_rw, SUM(jumlah_rt) as jumlah_rt, SUM(jumlah_tps) as jumlah_tps, SUM(jumlah_dpt) as jumlah_dpt')->groupBy('id_kecamatan')->get();
+                $data = WilayahRtRW::with('kecamatan')->selectRaw('id_kecamatan, SUM(jumlah_rw) as jumlah_rw, SUM(jumlah_rt) as jumlah_rt, SUM(jumlah_tps) as jumlah_tps, SUM(jumlah_dpt) as jumlah_dpt')->groupBy('id_kecamatan')->get();
                 
                 $formatted = $data->map(fn($item) => ['id_kecamatan' => $item->id_kecamatan, 'kecamatan' => $item->kecamatan->nama ?? '-', 'jumlah_rw' => (int)$item->jumlah_rw, 'jumlah_rt' => (int)$item->jumlah_rt, 'jumlah_tps' => (int)$item->jumlah_tps, 'jumlah_dpt' => (int)$item->jumlah_dpt]);
 
@@ -156,7 +156,7 @@ class DaerahController extends Controller
                 throw new ValidationException($validator);
             }
 
-            $wilayah = WilayahRTRW::where('id_desa', $id_desa)->first();
+            $wilayah = WilayahRtRW::where('id_desa', $id_desa)->first();
             if (!$wilayah) {
                 return $this->error('Data wilayah tidak ditemukan untuk desa ini.', 404);
             }

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class AnggotaController extends Controller
 {
@@ -100,6 +101,123 @@ class AnggotaController extends Controller
         } catch (\Exception $e) {
             Log::error('Update Anggota Error: ' . $e->getMessage());
             return $this->error('Terjadi kesalahan saat memperbarui data anggota.', 500);
+        }
+    }
+    
+    public function statistik(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $query = DB::table('anggota');
+
+            // Filter wilayah berdasarkan role
+            if ($user->role === 'admin_desa') {
+                $query->where('id_desa', $user->id_desa);
+            } elseif ($user->role === 'admin_pac') {
+                $query->where('id_kecamatan', $user->id_kecamatan);
+            }
+
+            $total = $query->count();
+
+            $laki = (clone $query)->whereIn('gender', ['l', 'Laki-laki'])->count();
+            $perempuan = (clone $query)->whereIn('gender', ['p', 'Perempuan'])->count();
+
+            $umur_19_30 = (clone $query)
+                ->whereBetween(DB::raw('TIMESTAMPDIFF(YEAR, tgl_lahir, CURDATE())'), [19, 30])
+                ->count();
+
+            $umur_31_45 = (clone $query)
+                ->whereBetween(DB::raw('TIMESTAMPDIFF(YEAR, tgl_lahir, CURDATE())'), [31, 45])
+                ->count();
+
+            $umur_46_up = (clone $query)
+                ->where(DB::raw('TIMESTAMPDIFF(YEAR, tgl_lahir, CURDATE())'), '>', 45)
+                ->count();
+
+            // Ambil semua data anggota (bisa ditambahkan pagination kalau perlu)
+            $anggota = $query->orderBy('nama')->get();
+
+            $data = [
+                'rekap' => [
+                    'total' => $total,
+                    'laki_laki' => $laki,
+                    'perempuan' => $perempuan,
+                    'klasifikasi_umur' => [
+                        '19_30' => $umur_19_30,
+                        '31_45' => $umur_31_45,
+                        '46_up' => $umur_46_up,
+                    ],
+                ],
+                'data' => $anggota
+            ];
+
+            return $this->success($data, 'Data anggota berhasil diperbarui.');
+
+
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Statistik Anggota Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat mengambil data anggota.', 500);
+        }
+    }
+
+    public function statistikFiltered(Request $request)
+    {
+        try {
+
+            $id_kecamatan = $request->query('id_kecamatan');
+            $id_desa = $request->query('id_desa');
+
+            $query = DB::table('anggota');
+
+            if ($id_desa) {
+                $query->where('id_desa', $id_desa);
+            } elseif ($id_kecamatan) {
+                $query->where('id_kecamatan', $id_kecamatan);
+            }
+
+            $total = $query->count();
+
+            $laki = (clone $query)->whereIn('gender', ['l', 'Laki-laki'])->count();
+            $perempuan = (clone $query)->whereIn('gender', ['p', 'Perempuan'])->count();
+
+            $umur_19_30 = (clone $query)
+                ->whereBetween(DB::raw('TIMESTAMPDIFF(YEAR, tgl_lahir, CURDATE())'), [19, 30])
+                ->count();
+
+            $umur_31_45 = (clone $query)
+                ->whereBetween(DB::raw('TIMESTAMPDIFF(YEAR, tgl_lahir, CURDATE())'), [31, 45])
+                ->count();
+
+            $umur_46_up = (clone $query)
+                ->where(DB::raw('TIMESTAMPDIFF(YEAR, tgl_lahir, CURDATE())'), '>', 45)
+                ->count();
+
+            $anggota = $query->orderBy('nama')->get();
+
+            $data = [
+                'rekap' => [
+                    'total' => $total,
+                    'laki_laki' => $laki,
+                    'perempuan' => $perempuan,
+                    'klasifikasi_umur' => [
+                        '19_30' => $umur_19_30,
+                        '31_45' => $umur_31_45,
+                        '46_up' => $umur_46_up,
+                    ],
+                ],
+                'data' => $anggota
+            ];
+
+            return $this->success($data, 'Data anggota berhasil diperbarui.');
+
+
+        } catch (ValidationException $e) {
+            return $this->validationError($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Statistik Anggota Error: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan saat mengambil data anggota.', 500);
         }
     }
 }

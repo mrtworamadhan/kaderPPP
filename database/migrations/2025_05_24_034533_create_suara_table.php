@@ -10,6 +10,7 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('suara', function (Blueprint $table) {
             $table->id();
+            $table->string('tahun')->nullable();
             $table->string('desa')->nullable();
             $table->unsignedBigInteger('id_desa')->nullable();
             $table->string('kecamatan')->nullable();

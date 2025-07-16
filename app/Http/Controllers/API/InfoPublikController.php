@@ -25,7 +25,7 @@ class InfoPublikController extends Controller
                 return $this->success(null, 'Belum ada arahan ketua.');
             }
             $formattedData = [
-                'tanggal' => $data->tanggal->format('d-m-Y'),
+                'tanggal' => Carbon::parse($data->tanggal)->format('d-m-Y'),
                 'arahan' => $data->arahan,
             ];
             return $this->success($formattedData, 'Arahan ketua terbaru berhasil diambil.');

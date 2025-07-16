@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Korwil;
 use App\Models\Anggota;
 use App\Models\User;
-use App\Models\WilayahRtRw;
+use App\Models\WilayahRtRW;
 use App\Traits\ApiResponder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -66,8 +66,10 @@ class KorwilController extends Controller
                 'nama'         => 'required|string',
                 'phone'        => 'nullable|string',
                 'rt'           => 'nullable|string',
-                'rw'           => 'nullable|string',
+                'rw'           => 'required|string',
+                'desa'          =>'required|string',
                 'id_desa'      => 'required|exists:daerah,id',
+                'kecamatan'     =>'required|string',
                 'id_kecamatan' => 'required|exists:daerah,id',
             ]);
             
@@ -86,7 +88,9 @@ class KorwilController extends Controller
                 'id_anggota'    => $no_kta,
                 'nama'          => $validatedData['nama'],
                 'phone'         => $validatedData['phone'] ?? null,
+                'desa'          => $validatedData['desa'],
                 'id_desa'       => $validatedData['id_desa'],
+                'kecamatan'     => $validatedData['kecamatan'],
                 'id_kecamatan'  => $validatedData['id_kecamatan'],
                 'jabatan'       => $validatedData['tingkat'],
             ]);
@@ -98,8 +102,10 @@ class KorwilController extends Controller
                 'nama'         => $validatedData['nama'],
                 'phone'        => $validatedData['phone'] ?? null,
                 'rt'           => $validatedData['rt'] ?? null,
-                'rw'           => $validatedData['rw'] ?? null,
-                'id_desa'      => $validatedData['id_desa'],
+                'rw'           => $validatedData['rw'],
+                'desa'          => $validatedData['desa'],
+                'id_desa'       => $validatedData['id_desa'],
+                'kecamatan'     => $validatedData['kecamatan'],
                 'id_kecamatan' => $validatedData['id_kecamatan'],
             ]);
 
@@ -172,7 +178,7 @@ class KorwilController extends Controller
     {
         try {
             $korwil = Korwil::where('id_desa', $id_desa)->orderBy('tingkat')->get();
-            $desaInfo = WilayahRtRw::where('id_desa', $id_desa)->select('jumlah_rw')->first();
+            $desaInfo = WilayahRtRW::where('id_desa', $id_desa)->select('jumlah_rw')->first();
     
             $data = [
                 'id_desa' => (int) $id_desa,
