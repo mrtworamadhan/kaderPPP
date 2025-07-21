@@ -7,23 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 class Struktur extends Model
 {
     protected $table = 'struktur';
+
+    // Sesuaikan fillable dengan struktur baru
     protected $fillable = [
+        'anggota_id',
         'tingkat',
-        'nik',
-        'nama',
         'jabatan',
         'bagian',
         'urutan',
-        'desa',
         'id_desa',
-        'kecamatan',
         'id_kecamatan',
     ];
+
+    /**
+     * Relasi: Setiap jabatan struktur dimiliki oleh satu Anggota.
+     */
     public function anggota()
     {
-        return $this->belongsTo(Anggota::class, 'nik', 'nik');
+        return $this->belongsTo(Anggota::class);
     }
-
+    
+    // Relasi ke kecamatan dan desa bisa tetap ada untuk kemudahan query
     public function kecamatan()
     {
         return $this->belongsTo(Daerah::class, 'id_kecamatan');

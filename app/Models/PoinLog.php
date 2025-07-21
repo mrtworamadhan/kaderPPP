@@ -1,19 +1,16 @@
 <?php
-
 namespace App\Models;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
-class Korwil extends Model
+class PoinLog extends Model
 {
-    protected $table = 'korwil';
+    use HasFactory;
+    protected $table = 'poin_logs';
     protected $fillable = [
         'anggota_id',
-        'tingkat',
-        'rt',
-        'rw',
-        'id_desa',
-        'id_kecamatan'
+        'event_id',
+        'points',
+        'description'
     ];
     public function anggota()
     {

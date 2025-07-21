@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -15,7 +14,12 @@ return new class extends Migration
             $table->id();
             $table->string('nik')->unique();
             $table->string('password');
-            $table->enum('role', ['admin_pusat', 'admin_pac', 'admin_desa', 'anggota', 'admin']);
+            $table->string('role'); // admin_pusat, admin_pac, admin_desa, anggota
+            $table->foreignId('anggota_id')->nullable()->constrained('anggota')->onDelete('cascade');
+            $table->unsignedBigInteger('id_kecamatan')->nullable();
+            $table->unsignedBigInteger('id_desa')->nullable();
+            $table->foreign('id_kecamatan')->references('id')->on('daerah')->onDelete('set null');
+            $table->foreign('id_desa')->references('id')->on('daerah')->onDelete('set null');
             $table->rememberToken();
             $table->timestamps();
         });

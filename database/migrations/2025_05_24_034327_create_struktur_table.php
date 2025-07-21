@@ -7,24 +7,23 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void {
+    public function up(): void
+    {
         Schema::create('struktur', function (Blueprint $table) {
             $table->id();
-            $table->enum('tingkat', ['dpc', 'dpac', 'dprt']);
-            $table->string('nik'); // relasi ke anggota (by NIK)
-            $table->string('nama');
+            $table->foreignId('anggota_id')->constrained('anggota')->onDelete('cascade');
+            $table->enum('tingkat', ['dpac', 'dprt']);
             $table->string('jabatan');
-            $table->string('bagian')->nullable(); // bidang/komisi jika ada
+            $table->string('bagian')->nullable();
             $table->integer('urutan')->nullable();
-            $table->string('desa')->nullable();
-            $table->unsignedBigInteger('id_desa')->nullable();
-            $table->string('kecamatan')->nullable();
-            $table->unsignedBigInteger('id_kecamatan')->nullable();
+            $table->foreignId('id_desa')->nullable()->constrained('daerah')->onDelete('set null');
+            $table->foreignId('id_kecamatan')->nullable()->constrained('daerah')->onDelete('set null');
             $table->timestamps();
         });
     }
 
-    public function down(): void {
+    public function down(): void
+    {
         Schema::dropIfExists('struktur');
     }
 };

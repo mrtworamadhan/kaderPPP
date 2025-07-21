@@ -13,9 +13,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AdminSeeder::class,
-            StrukturSeeder::class,
-            KorwilSeeder::class,
-            SuaraSeeder::class,
+            StrukturLengkapSeeder::class,
+            SuaraKabupatenSeeder::class,
         ]);
     }
 }

@@ -12,6 +12,9 @@ use App\Http\Controllers\API\DashboardController;
 use App\Http\Controllers\API\InfoPublikController;
 use App\Http\Controllers\API\KorwilController;
 use App\Http\Controllers\API\DashboardSuaraController;
+use App\Http\Controllers\API\DashboardStrukturController;
+use App\Http\Controllers\API\DashboardAnggotaController;
+use App\Http\Controllers\API\EventController;
 
 // Login & Register
 Route::post('/register', [AuthenticationController::class, 'register']);
@@ -22,8 +25,10 @@ Route::get('/wilayah/desa-rtrw/{id_kecamatan}', [DaerahController::class, 'getDe
 
 Route::get('/dashboard/suara/perbandingan', [DashboardSuaraController::class, 'perbandingan']);
 Route::get('/dashboard/suara/detail', [DashboardSuaraController::class, 'detail']);
+Route::get('/dashboard/kinerja', [DashboardStrukturController::class, 'pencapaian']);
 
-
+Route::get('/dashboard/anggota/statistik', [DashboardAnggotaController::class, 'statistik']);
+Route::get('/dashboard/anggota/cari', [DashboardAnggotaController::class, 'cari']);
 
 
 // Protected Routes (require token)
@@ -57,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/anggota/statistik', [AnggotaController::class, 'statistik']);
     Route::get('/anggota/statistik/filter', [AnggotaController::class, 'statistikFiltered']);
 
+    
     Route::post('/struktur', [StrukturController::class, 'store']);
     Route::get('/struktur/kecamatan/{id}', [StrukturController::class, 'byKecamatan']);
     Route::get('/struktur/desa/{id}', [StrukturController::class, 'byDesa']);
@@ -83,6 +89,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
+    Route::prefix('events')->group(function () {
+          
+            Route::get('/roles', [EventController::class, 'getRoles']);
+            Route::post('/', [EventController::class, 'store']);
+            Route::get('/', [EventController::class, 'index']);
+            Route::get('/admin-index', [EventController::class, 'adminIndex']);
+            Route::get('/{event}/qrcode', [EventController::class, 'showQrCode'])->name('events.qrcode');
+            Route::post('/attend', [EventController::class, 'attend']);
+            Route::get('/{event}/attendees', [EventController::class, 'getAttendees']);
+
+        });
+
+    
 });
 
 

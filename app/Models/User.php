@@ -55,6 +55,6 @@ class User extends Authenticatable
 
     public function anggota()
     {
-        return $this->hasOne(Anggota::class, 'nik', 'nik');
+        return $this->belongsTo(Anggota::class);
     }
 }

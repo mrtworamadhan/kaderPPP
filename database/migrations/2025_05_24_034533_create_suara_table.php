@@ -18,6 +18,8 @@ return new class extends Migration {
             $table->integer('dprd')->default(0);
             $table->integer('dpr_prov')->default(0);
             $table->integer('dpr_ri')->default(0);
+            $table->string('tps')->nullable();
+            $table->string('sumber')->nullable();
             $table->timestamps();
         });
     }

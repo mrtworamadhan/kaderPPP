@@ -6,7 +6,7 @@
     <title>Dashboard Suara</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 15px; background-color: #f0f2f5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 15px; background-color: #ffffffff; }
         .filter-container { display: flex; gap: 20px; justify-content: center; align-items: center; padding: 15px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; flex-wrap: wrap; }
         .filter-item { display: flex; flex-direction: column; }
         .filter-item label { font-size: 12px; color: #606770; margin-bottom: 4px; }
@@ -92,8 +92,8 @@
                 data: {
                     labels: ['DPRD', 'DPR PROV', 'DPR RI'],
                     datasets: [
-                        { label: 'Suara 2019', data: [data.dprd['2019'], data.dpr_prov['2019'], data.dpr_ri['2019']], backgroundColor: 'rgba(255, 99, 132, 0.5)'},
-                        { label: 'Suara 2024', data: [data.dprd['2024'], data.dpr_prov['2024'], data.dpr_ri['2024']], backgroundColor: 'rgba(54, 162, 235, 0.5)'}
+                        { label: 'Suara 2019', data: [data.dprd['2019'], data.dpr_prov['2019'], data.dpr_ri['2019']], backgroundColor: '#fdb71f99'},
+                        { label: 'Suara 2024', data: [data.dprd['2024'], data.dpr_prov['2024'], data.dpr_ri['2024']], backgroundColor: 'rgba(17, 104, 17, 0.69)'}
                     ]
                 },
                 options: { responsive: true }
@@ -136,7 +136,7 @@
 
             new Chart(detailCanvas.getContext('2d'), {
                 type: 'bar',
-                data: { labels, datasets: [{ data: dataValues, backgroundColor: 'rgba(75, 192, 192, 0.5)' }] },
+                data: { labels, datasets: [{ data: dataValues, backgroundColor: 'rgba(17, 104, 17, 0.82)' }] },
                 options: {
                     indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },

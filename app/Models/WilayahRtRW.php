@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class WilayahRtRw extends Model
+class WilayahRtRW extends Model
 {
     protected $table = 'wilayah_rtrw';
 
