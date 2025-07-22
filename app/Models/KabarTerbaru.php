@@ -12,8 +12,12 @@ class KabarTerbaru extends Model
     protected $table = 'kabar_terbaru';
 
     protected $fillable = [
-        'deskripsi',
+        'judul',
         'link',
-        'gambar',
+        'foto',
+        'url_target',
+        'points_per_click',
+        'share_expires_at',
+        'share_code',
     ];
 }

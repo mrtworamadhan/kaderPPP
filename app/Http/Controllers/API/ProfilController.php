@@ -56,7 +56,7 @@ class ProfilController extends Controller
                 'tgl_lahir' => 'nullable|date',
                 'gender'    => 'nullable|string',
                 'pekerjaan' => 'nullable|string',
-                'foto'      => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Validasi untuk file foto
+                'foto'      => 'nullable|image|mimes:jpeg,png,jpg|max:2048', 
             ]);
 
             if ($validator->fails()) {

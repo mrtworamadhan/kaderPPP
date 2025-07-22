@@ -15,6 +15,10 @@ use App\Http\Controllers\API\DashboardSuaraController;
 use App\Http\Controllers\API\DashboardStrukturController;
 use App\Http\Controllers\API\DashboardAnggotaController;
 use App\Http\Controllers\API\EventController;
+use App\Http\Controllers\API\KaderDashboardController;
+use App\Http\Controllers\API\RewardController;
+use App\Http\Controllers\API\LeaderboardController;
+use App\Http\Controllers\API\KaderProfilController;
 
 // Login & Register
 Route::post('/register', [AuthenticationController::class, 'register']);
@@ -41,7 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profildesa/{id_desa}', [DaerahController::class, 'updateProfilDesa']);
     Route::get('/profilkecamatan/{id_kecamatan}', [DaerahController::class, 'profilKecamatan']);
 
-    
+
     Route::post('/logout', [AuthenticationController::class, 'logOut']);
     Route::get('/users', [AuthenticationController::class, 'userInfo']);
     Route::get('/profilanggota', [AuthenticationController::class, 'profil']);
@@ -55,20 +59,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/profil', [ProfilController::class, 'profil']);
     Route::put('/profil/update', [ProfilController::class, 'updateProfil']);
-    
 
+    Route::get('/kader/profil', [KaderProfilController::class, 'show']);
+    Route::post('/kader/profil', [KaderProfilController::class, 'update']); // Kita gunakan POST untuk update karena lebih mudah menangani file upload (FormData)
+   
     Route::post('/anggota', [AnggotaController::class, 'store']);
     Route::put('/anggota/{id}', [AnggotaController::class, 'update']);
     Route::get('/anggota/statistik', [AnggotaController::class, 'statistik']);
     Route::get('/anggota/statistik/filter', [AnggotaController::class, 'statistikFiltered']);
 
-    
+
     Route::post('/struktur', [StrukturController::class, 'store']);
     Route::get('/struktur/kecamatan/{id}', [StrukturController::class, 'byKecamatan']);
     Route::get('/struktur/desa/{id}', [StrukturController::class, 'byDesa']);
     Route::get('/struktur/pac', [StrukturController::class, 'indexDpac']);
     Route::get('/struktur/dprt', [StrukturController::class, 'indexDprt']);
-    
+
     Route::get('/korwil', [KorwilController::class, 'index']);
     Route::post('/korwil', [KorwilController::class, 'store']);
     Route::put('/korwil/{id}', [KorwilController::class, 'update']);
@@ -89,19 +95,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
+    Route::get('/kader/dashboard', [KaderDashboardController::class, 'index']);
+    Route::get('/kabar-terbaru', [InfoPublikController::class, 'paginatedIndex']);
+
+    Route::get('/rewards', [RewardController::class, 'index']);
+
+    Route::get('/leaderboard', [LeaderboardController::class, 'index']);
+
+
     Route::prefix('events')->group(function () {
-          
-            Route::get('/roles', [EventController::class, 'getRoles']);
-            Route::post('/', [EventController::class, 'store']);
-            Route::get('/', [EventController::class, 'index']);
-            Route::get('/admin-index', [EventController::class, 'adminIndex']);
-            Route::get('/{event}/qrcode', [EventController::class, 'showQrCode'])->name('events.qrcode');
-            Route::post('/attend', [EventController::class, 'attend']);
-            Route::get('/{event}/attendees', [EventController::class, 'getAttendees']);
 
-        });
+        Route::get('/roles', [EventController::class, 'getRoles']);
+        Route::post('/', [EventController::class, 'store']);
+        Route::get('/', [EventController::class, 'index']);
+        Route::get('/admin-index', [EventController::class, 'adminIndex']);
+        Route::get('/{event}/qrcode', [EventController::class, 'showQrCode'])->name('events.qrcode');
+        Route::post('/attend', [EventController::class, 'attend']);
+        Route::get('/{event}/attendees', [EventController::class, 'getAttendees']);
 
-    
+    });
+
+
 });
 
 
